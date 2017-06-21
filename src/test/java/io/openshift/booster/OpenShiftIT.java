@@ -16,43 +16,41 @@
 
 package io.openshift.booster;
 
-import java.util.concurrent.TimeUnit;
-
 import com.jayway.restassured.RestAssured;
-import com.jayway.restassured.response.Response;
+import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.openshift.booster.service.GreetingProperties;
-import io.openshift.booster.test.OpenShiftTestAssistant;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.arquillian.cube.kubernetes.api.Session;
+import org.assertj.core.api.Assertions;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.test.api.ArquillianResource;
+import org.junit.Before;
+import org.junit.runner.RunWith;
 
-import static com.jayway.awaitility.Awaitility.await;
-import static com.jayway.restassured.RestAssured.get;
+import java.util.Objects;
 
+@RunWith(Arquillian.class)
 public class OpenShiftIT extends AbstractBoosterApplicationTest {
+    @ArquillianResource
+    OpenShiftClient client;
 
-    private static OpenShiftTestAssistant assistant = new OpenShiftTestAssistant();
+    @ArquillianResource
+    Session session;
 
-    @BeforeClass
-    public static void prepare() throws Exception {
-        assistant.deployApplication();
-        assistant.awaitApplicationReadinessOrFail();
+    private final String applicationName = "spring-boot-http";
 
-        await().atMost(5, TimeUnit.MINUTES)
-                .until(() -> {
-                    try {
-                        Response response = get();
-                        return response.getStatusCode() < 500;
-                    } catch (Exception e) {
-                        return false;
-                    }
-                });
-
-        RestAssured.baseURI = RestAssured.baseURI + "/api/greeting";
-    }
-
-    @AfterClass
-    public static void cleanup() {
-        assistant.cleanup();
+    @Before
+    public void setup() {
+        final Route route = this.client.adapt(OpenShiftClient.class)
+                .routes()
+                .inNamespace(this.session.getNamespace())
+                .withName(this.applicationName)
+                .get();
+        Assertions.assertThat(route)
+                .isNotNull();
+        RestAssured.baseURI = String.format("http://%s/api/greeting", Objects.requireNonNull(route)
+                .getSpec()
+                .getHost());
     }
 
     protected GreetingProperties getProperties() {

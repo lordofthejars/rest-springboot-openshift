@@ -35,6 +35,7 @@
     <tomcat.version>8.0.36</tomcat.version>
 
     <maven.spring-boot.plugin.version>1.4.1.RELEASE</maven.spring-boot.plugin.version>
+    <version.arquillian_cube>1.6.0</version.arquillian_cube>
   </properties>
 
   <dependencyManagement>
@@ -46,6 +47,14 @@
         <version>${spring-boot.bom.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.arquillian.cube</groupId>
+        <artifactId>arquillian-cube-bom</artifactId>
+        <version>${version.arquillian_cube}</version>
+        <scope>import</scope>
+        <type>pom</type>
       </dependency>
     </dependencies>
   </dependencyManagement>
