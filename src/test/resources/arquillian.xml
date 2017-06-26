@@ -4,6 +4,6 @@
                http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
 
     <extension qualifier="openshift">
-        <property name="env.init.enabled">false</property>
+        <!--<property name="env.init.enabled">false</property>-->
     </extension>
 </arquillian>
