@@ -1,0 +1,22 @@
+= Spring Boot + OpenShift
+
+This example shows how to use Fabric8 Maven plugin for generating OpenShift/Kubernetes resources of a Spring Boot application.
+Also shows how to use Arquillian Cube together with Fabric8 to run deployment tests to ensure that the application will work when deployed into OpenShift cluster.
+
+== Previous steps
+
+* `git clone git@github.com:lordofthejars/rest-springboot-openshift.git`
+* `minishift start` I have tested with OpenShift Origin 3.6.0
+* `oc login`
+
+== Run tests
+
+`mvn clean verify -Popenshift,openshift-it -Denv.init.enabled=true -DenableImageStreamDetection=true`
+
+This command will compile project and run tests using Spring Test framework.
+After that uses Fabric8 Maven plugin to generate `openshift.json`, `kubernetes.json` and `spring-boot-http-is.yml` (for Image Stream generation).
+
+Then it runs deployment test (`io.openshift.booster.OpenShiftIT`) which creates a temporal namespace (`itest-xxxx`), apply Fabric8 generated resources and finally when everything is deployed and up and running, it executes the test method.
+
+WARNING: Sometimes the first time you run Fabric8 Maven plugin you get an HTTP 504 error.
+Just rerun again the build and it will work.
