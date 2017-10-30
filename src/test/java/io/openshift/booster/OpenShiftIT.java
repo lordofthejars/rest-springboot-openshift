@@ -16,41 +16,52 @@
 
 package io.openshift.booster;
 
-import com.jayway.restassured.RestAssured;
-import io.fabric8.openshift.api.model.Route;
-import io.fabric8.openshift.client.OpenShiftClient;
+import com.jayway.restassured.builder.RequestSpecBuilder;
 import io.openshift.booster.service.GreetingProperties;
-import org.arquillian.cube.kubernetes.api.Session;
-import org.assertj.core.api.Assertions;
+import java.net.URL;
+import java.util.Objects;
+import org.arquillian.cube.openshift.impl.enricher.RouteURL;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.Objects;
+import static com.jayway.restassured.RestAssured.given;
+import static org.hamcrest.core.Is.is;
 
 @RunWith(Arquillian.class)
-public class OpenShiftIT extends AbstractBoosterApplicationTest {
-    @ArquillianResource
-    OpenShiftClient client;
+public class OpenShiftIT {
 
-    @ArquillianResource
-    Session session;
+    @RouteURL("spring-boot-http")
+    private URL route;
 
-    private final String applicationName = "spring-boot-http";
+    private RequestSpecBuilder requestSpecBuilder;
 
     @Before
-    public void setup() {
-        final Route route = this.client.adapt(OpenShiftClient.class)
-                .routes()
-                .inNamespace(this.session.getNamespace())
-                .withName(this.applicationName)
-                .get();
-        Assertions.assertThat(route)
-                .isNotNull();
-        RestAssured.baseURI = String.format("http://%s/api/greeting", Objects.requireNonNull(route)
-                .getSpec()
-                .getHost());
+    public void setupRestAssured() {
+        this.requestSpecBuilder = new RequestSpecBuilder();
+        requestSpecBuilder.setBaseUri(String.format("http://%s/api/greeting", Objects.requireNonNull(route)
+            .getHost()));
+    }
+
+    @Test
+    public void testGreetingEndpoint() {
+        given(requestSpecBuilder.build())
+            .when().get()
+            .then()
+            .statusCode(200)
+            .body("content", is(String.format(getProperties().getMessage(), "World")));
+    }
+
+    @Test
+    public void testGreetingEndpointWithNameParameter() {
+        given(requestSpecBuilder.build())
+            .param("name", "John")
+            .when()
+            .get()
+            .then()
+            .statusCode(200)
+            .body("content", is(String.format(getProperties().getMessage(), "John")));
     }
 
     protected GreetingProperties getProperties() {

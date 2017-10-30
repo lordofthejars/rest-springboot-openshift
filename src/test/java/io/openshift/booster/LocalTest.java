@@ -18,15 +18,20 @@ package io.openshift.booster;
 import com.jayway.restassured.RestAssured;
 import io.openshift.booster.service.GreetingProperties;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import static com.jayway.restassured.RestAssured.given;
+import static com.jayway.restassured.RestAssured.when;
+import static org.hamcrest.core.Is.is;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class LocalTest extends AbstractBoosterApplicationTest {
+public class LocalTest {
 
     @Value("${local.server.port}")
     private int port;
@@ -37,6 +42,24 @@ public class LocalTest extends AbstractBoosterApplicationTest {
     @Before
     public void beforeTest() {
         RestAssured.baseURI = String.format("http://localhost:%d/api/greeting", port);
+    }
+
+    @Test
+    public void testGreetingEndpoint() {
+        when().get()
+            .then()
+            .statusCode(200)
+            .body("content", is(String.format(getProperties().getMessage(), "World")));
+    }
+
+    @Test
+    public void testGreetingEndpointWithNameParameter() {
+        given().param("name", "John")
+            .when()
+            .get()
+            .then()
+            .statusCode(200)
+            .body("content", is(String.format(getProperties().getMessage(), "John")));
     }
 
     protected GreetingProperties getProperties() {
